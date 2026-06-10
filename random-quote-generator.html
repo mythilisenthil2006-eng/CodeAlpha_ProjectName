@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random Quote Generator</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Georgia', serif;
+    background: #0a0a0f;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bg-orb {
+    position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.15; pointer-events: none; transition: all 1.2s ease;
+  }
+  .orb1 { width: 400px; height: 400px; background: #f59e0b; top: -100px; left: -100px; }
+  .orb2 { width: 300px; height: 300px; background: #7c3aed; bottom: -80px; right: -80px; }
+
+  header { position: fixed; top: 0; left: 0; right: 0; padding: 18px 28px; display: flex; justify-content: space-between; align-items: center; background: #0a0a0f99; backdrop-filter: blur(10px); border-bottom: 1px solid #ffffff0f; z-index: 10; }
+  header h1 { font-size: 1rem; color: #f59e0b; letter-spacing: 2px; text-transform: uppercase; font-family: 'Segoe UI', sans-serif; font-weight: 600; }
+  .quote-count { font-family: 'Segoe UI', sans-serif; font-size: 0.78rem; color: #475569; }
+
+  .card {
+    position: relative; max-width: 680px; width: 100%;
+    background: #ffffff06; border: 1px solid #ffffff10;
+    border-radius: 24px; padding: 52px 48px;
+    backdrop-filter: blur(20px);
+    transition: all 0.4s ease;
+    text-align: center;
+  }
+  .quote-mark { font-size: 5rem; color: #f59e0b22; line-height: 1; margin-bottom: 8px; font-family: Georgia, serif; }
+  .quote-text {
+    font-size: 1.45rem; line-height: 1.7; color: #f1f5f9;
+    font-style: italic; margin-bottom: 28px;
+    min-height: 120px; display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.3s ease;
+  }
+  .quote-author { font-family: 'Segoe UI', sans-serif; font-size: 0.9rem; color: #f59e0b; letter-spacing: 1px; text-transform: uppercase; font-weight: 600; }
+  .quote-category { font-family: 'Segoe UI', sans-serif; font-size: 0.75rem; color: #475569; margin-top: 6px; letter-spacing: 1px; text-transform: uppercase; }
+  .divider { width: 50px; height: 2px; background: linear-gradient(to right, #f59e0b, #7c3aed); margin: 20px auto; border-radius: 2px; }
+
+  .actions { display: flex; gap: 14px; margin-top: 36px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 13px 30px; border: none; border-radius: 50px; font-size: 0.88rem;
+    font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: 'Segoe UI', sans-serif;
+    letter-spacing: 0.5px;
+  }
+  .btn-main { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0a0a0f; }
+  .btn-main:hover { transform: translateY(-2px); box-shadow: 0 8px 24px #f59e0b44; }
+  .btn-copy { background: #ffffff08; color: #94a3b8; border: 1px solid #ffffff14; }
+  .btn-copy:hover { background: #ffffff14; color: #e2e8f0; }
+  .btn-fav { background: #ffffff08; color: #f87171; border: 1px solid #f8717122; }
+  .btn-fav:hover { background: #f8717114; }
+  .btn-fav.saved { background: #f8717120; color: #fca5a5; }
+
+  .favorites { max-width: 680px; width: 100%; margin-top: 32px; }
+  .favorites h2 { font-family: 'Segoe UI', sans-serif; font-size: 0.8rem; color: #475569; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+  .fav-list { display: flex; flex-direction: column; gap: 10px; max-height: 220px; overflow-y: auto; }
+  .fav-item { background: #ffffff06; border: 1px solid #ffffff0d; border-radius: 12px; padding: 14px 18px; font-size: 0.85rem; color: #94a3b8; font-style: italic; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .fav-item span { flex: 1; line-height: 1.5; }
+  .fav-author { color: #f59e0b; font-size: 0.75rem; font-style: normal; font-family: 'Segoe UI', sans-serif; display: block; margin-top: 4px; }
+  .remove-fav { background: none; border: none; color: #475569; cursor: pointer; font-size: 1rem; padding: 2px 6px; border-radius: 6px; }
+  .remove-fav:hover { color: #f87171; }
+  .empty-fav { color: #334155; font-size: 0.85rem; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 16px; }
+
+  .fade-out { opacity: 0; }
+</style>
+</head>
+<body>
+<div class="bg-orb orb1"></div>
+<div class="bg-orb orb2"></div>
+
+<header>
+  <h1>✦ Quote of the Moment</h1>
+  <span class="quote-count" id="quoteCount"></span>
+</header>
+
+<div class="card" id="quoteCard">
+  <div class="quote-mark">"</div>
+  <div class="quote-text" id="quoteText">Loading...</div>
+  <div class="divider"></div>
+  <div class="quote-author" id="quoteAuthor">—</div>
+  <div class="quote-category" id="quoteCategory"></div>
+  <div class="actions">
+    <button class="btn btn-main" onclick="newQuote()">New Quote</button>
+    <button class="btn btn-copy" id="copyBtn" onclick="copyQuote()">Copy</button>
+    <button class="btn btn-fav" id="favBtn" onclick="toggleFav()">♡ Save</button>
+  </div>
+</div>
+
+<div class="favorites" id="favSection" style="display:none;">
+  <h2>Saved Quotes</h2>
+  <div class="fav-list" id="favList"></div>
+</div>
+
+<script>
+const quotes = [
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs", category: "Motivation" },
+  { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein", category: "Inspiration" },
+  { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius", category: "Perseverance" },
+  { text: "Life is what happens when you're busy making other plans.", author: "John Lennon", category: "Life" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt", category: "Dreams" },
+  { text: "Success is not final, failure is not fatal: It is the courage to continue that counts.", author: "Winston Churchill", category: "Success" },
+  { text: "The only impossible journey is the one you never begin.", author: "Tony Robbins", category: "Motivation" },
+  { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt", category: "Belief" },
+  { text: "Act as if what you do makes a difference. It does.", author: "William James", category: "Action" },
+  { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair", category: "Courage" },
+  { text: "Do not wait to strike till the iron is hot; but make it hot by striking.", author: "William Butler Yeats", category: "Action" },
+  { text: "The secret of getting ahead is getting started.", author: "Mark Twain", category: "Motivation" },
+  { text: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis", category: "Resilience" },
+  { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky", category: "Courage" },
+  { text: "Whether you think you can or you think you can't, you're right.", author: "Henry Ford", category: "Mindset" },
+  { text: "Education is the most powerful weapon which you can use to change the world.", author: "Nelson Mandela", category: "Education" },
+  { text: "Two roads diverged in a wood, and I took the one less traveled by.", author: "Robert Frost", category: "Life" },
+  { text: "Not all those who wander are lost.", author: "J.R.R. Tolkien", category: "Adventure" },
+  { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb", category: "Wisdom" },
+  { text: "Darkness cannot drive out darkness; only light can do that.", author: "Martin Luther King Jr.", category: "Hope" }
+];
+
+let currentIndex = 0;
+let favorites = [];
+
+function randomIndex() {
+  let idx;
+  do { idx = Math.floor(Math.random() * quotes.length); } while (idx === currentIndex && quotes.length > 1);
+  return idx;
+}
+
+function showQuote(idx) {
+  const q = quotes[idx];
+  const textEl = document.getElementById('quoteText');
+  textEl.classList.add('fade-out');
+  setTimeout(() => {
+    document.getElementById('quoteText').textContent = q.text;
+    document.getElementById('quoteAuthor').textContent = '— ' + q.author;
+    document.getElementById('quoteCategory').textContent = q.category;
+    document.getElementById('quoteCount').textContent = `${idx + 1} / ${quotes.length}`;
+    textEl.classList.remove('fade-out');
+    updateFavBtn();
+  }, 300);
+}
+
+function newQuote() {
+  currentIndex = randomIndex();
+  showQuote(currentIndex);
+}
+
+function copyQuote() {
+  const q = quotes[currentIndex];
+  const text = `"${q.text}" — ${q.author}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+function isFaved() {
+  return favorites.some(f => f.text === quotes[currentIndex].text);
+}
+
+function updateFavBtn() {
+  const btn = document.getElementById('favBtn');
+  if (isFaved()) { btn.textContent = '♥ Saved'; btn.classList.add('saved'); }
+  else { btn.textContent = '♡ Save'; btn.classList.remove('saved'); }
+}
+
+function toggleFav() {
+  const q = quotes[currentIndex];
+  if (isFaved()) {
+    favorites = favorites.filter(f => f.text !== q.text);
+  } else {
+    favorites.push(q);
+  }
+  updateFavBtn();
+  renderFavs();
+}
+
+function renderFavs() {
+  const section = document.getElementById('favSection');
+  const list = document.getElementById('favList');
+  if (favorites.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = favorites.map((f, i) => `
+    <div class="fav-item">
+      <span>"${f.text}"<span class="fav-author">— ${f.author}</span></span>
+      <button class="remove-fav" onclick="removeFav(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeFav(i) {
+  favorites.splice(i, 1);
+  renderFavs();
+  updateFavBtn();
+}
+
+// Init
+currentIndex = Math.floor(Math.random() * quotes.length);
+showQuote(currentIndex);
+</script>
+</body>
+</html>

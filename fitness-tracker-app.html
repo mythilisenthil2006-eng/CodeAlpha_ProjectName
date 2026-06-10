@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitness Tracker App</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e2e8f0; min-height: 100vh; }
+  header { background: #161b22; border-bottom: 1px solid #21262d; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 1.2rem; color: #22c55e; font-weight: 700; letter-spacing: 1px; }
+  .today-date { font-size: 0.8rem; color: #484f58; }
+
+  .layout { display: flex; max-width: 1000px; margin: 0 auto; padding: 24px 16px; gap: 20px; flex-wrap: wrap; }
+  .left { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 16px; }
+  .right { flex: 2; min-width: 300px; display: flex; flex-direction: column; gap: 16px; }
+
+  .card { background: #161b22; border: 1px solid #21262d; border-radius: 14px; padding: 20px; }
+  .card h2 { font-size: 0.8rem; color: #484f58; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
+
+  /* Summary Stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-box { background: #0d1117; border-radius: 10px; padding: 14px; text-align: center; border: 1px solid #21262d; }
+  .stat-val { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: 0.72rem; color: #484f58; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .green { color: #22c55e; }
+  .orange { color: #f97316; }
+  .blue { color: #3b82f6; }
+  .yellow { color: #eab308; }
+
+  /* Progress Bars */
+  .goal-item { margin-bottom: 14px; }
+  .goal-item:last-child { margin-bottom: 0; }
+  .goal-header { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px; }
+  .goal-name { color: #8b949e; }
+  .goal-progress { color: #e2e8f0; font-weight: 600; }
+  .progress-bar { background: #21262d; border-radius: 6px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease; }
+  .fill-green { background: linear-gradient(to right, #16a34a, #22c55e); }
+  .fill-orange { background: linear-gradient(to right, #ea580c, #f97316); }
+  .fill-blue { background: linear-gradient(to right, #1d4ed8, #3b82f6); }
+
+  /* Log Form */
+  .form-grid { display: grid; gap: 10px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-group label { font-size: 0.75rem; color: #484f58; display: block; margin-bottom: 5px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .form-group input, .form-group select { width: 100%; background: #0d1117; border: 1px solid #21262d; border-radius: 8px; padding: 10px 12px; color: #e2e8f0; font-size: 0.88rem; outline: none; font-family: inherit; }
+  .form-group input:focus, .form-group select:focus { border-color: #22c55e; }
+  .form-group select option { background: #161b22; }
+  .btn-log { width: 100%; padding: 12px; background: linear-gradient(135deg, #16a34a, #22c55e); color: #0d1117; border: none; border-radius: 10px; font-weight: 700; font-size: 0.92rem; cursor: pointer; margin-top: 4px; letter-spacing: 0.5px; transition: opacity 0.2s; }
+  .btn-log:hover { opacity: 0.9; }
+
+  /* Activity Log */
+  .activity-list { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+  .activity-item { background: #0d1117; border: 1px solid #21262d; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 14px; }
+  .act-icon { font-size: 1.4rem; width: 36px; text-align: center; }
+  .act-info { flex: 1; }
+  .act-name { font-size: 0.9rem; font-weight: 600; color: #e2e8f0; }
+  .act-meta { font-size: 0.75rem; color: #484f58; margin-top: 2px; }
+  .act-cals { font-size: 0.85rem; color: #f97316; font-weight: 600; }
+  .btn-del { background: none; border: none; color: #484f58; cursor: pointer; font-size: 1.1rem; padding: 4px 8px; border-radius: 6px; }
+  .btn-del:hover { color: #f87171; background: #ff000010; }
+  .empty-log { color: #484f58; font-size: 0.85rem; text-align: center; padding: 24px; }
+
+  /* Mini Chart */
+  .chart-wrap { overflow-x: auto; padding-bottom: 6px; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 100px; padding: 0 4px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 30px; }
+  .bar { width: 100%; background: linear-gradient(to top, #16a34a, #4ade80); border-radius: 4px 4px 0 0; transition: height 0.4s ease; min-height: 4px; }
+  .bar-label { font-size: 0.65rem; color: #484f58; }
+  .bar-val { font-size: 0.65rem; color: #22c55e; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 14px; background: #0d1117; border-radius: 10px; padding: 4px; }
+  .tab { flex: 1; padding: 8px; border: none; background: none; color: #484f58; font-size: 0.8rem; font-weight: 600; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-family: inherit; }
+  .tab.active { background: #161b22; color: #22c55e; border: 1px solid #21262d; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>💪 FitTrack</h1>
+  <span class="today-date" id="todayDate"></span>
+</header>
+
+<div class="layout">
+  <div class="left">
+    <!-- Today Summary -->
+    <div class="card">
+      <h2>Today's Summary</h2>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val green" id="totalSteps">0</div><div class="stat-label">Steps</div></div>
+        <div class="stat-box"><div class="stat-val orange" id="totalCals">0</div><div class="stat-label">Calories</div></div>
+        <div class="stat-box"><div class="stat-val blue" id="totalMins">0</div><div class="stat-label">Minutes</div></div>
+        <div class="stat-box"><div class="stat-val yellow" id="totalWorkouts">0</div><div class="stat-label">Workouts</div></div>
+      </div>
+    </div>
+
+    <!-- Goals -->
+    <div class="card">
+      <h2>Daily Goals</h2>
+      <div class="goal-item">
+        <div class="goal-header"><span class="goal-name">Steps</span><span class="goal-progress" id="stepsGoalText">0 / 10,000</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-green" id="stepsBar" style="width:0%"></div></div>
+      </div>
+      <div class="goal-item">
+        <div class="goal-header"><span class="goal-name">Calories Burned</span><span class="goal-progress" id="calsGoalText">0 / 500</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-orange" id="calsBar" style="width:0%"></div></div>
+      </div>
+      <div class="goal-item">
+        <div class="goal-header"><span class="goal-name">Active Minutes</span><span class="goal-progress" id="minsGoalText">0 / 60</span></div>
+        <div class="progress-bar"><div class="progress-fill fill-blue" id="minsBar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <!-- Tabs -->
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('log')">Log Activity</button>
+        <button class="tab" onclick="switchTab('history')">History</button>
+        <button class="tab" onclick="switchTab('weekly')">Weekly Chart</button>
+      </div>
+
+      <!-- Log Tab -->
+      <div class="tab-content active" id="tab-log">
+        <div class="form-grid">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Exercise Type</label>
+              <select id="exType">
+                <option value="🏃 Running">🏃 Running</option>
+                <option value="🚶 Walking">🚶 Walking</option>
+                <option value="🚴 Cycling">🚴 Cycling</option>
+                <option value="🏊 Swimming">🏊 Swimming</option>
+                <option value="🏋️ Weightlifting">🏋️ Weightlifting</option>
+                <option value="🧘 Yoga">🧘 Yoga</option>
+                <option value="⚽ Sports">⚽ Sports</option>
+                <option value="🤸 HIIT">🤸 HIIT</option>
+                <option value="🚣 Rowing">🚣 Rowing</option>
+                <option value="🎯 Other">🎯 Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Duration (mins)</label>
+              <input type="number" id="duration" placeholder="e.g. 30" min="1" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Calories Burned</label>
+              <input type="number" id="calories" placeholder="e.g. 200" min="0" />
+            </div>
+            <div class="form-group">
+              <label>Steps (optional)</label>
+              <input type="number" id="steps" placeholder="e.g. 3000" min="0" />
+            </div>
+          </div>
+          <button class="btn-log" onclick="logActivity()">+ Log Activity</button>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div class="tab-content" id="tab-history">
+        <div class="activity-list" id="activityList">
+          <div class="empty-log">No activities logged today. Start tracking!</div>
+        </div>
+      </div>
+
+      <!-- Weekly Chart Tab -->
+      <div class="tab-content" id="tab-weekly">
+        <h2 style="margin-bottom:14px;">Calories Burned This Week</h2>
+        <div class="chart-wrap">
+          <div class="bar-chart" id="weekChart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let activities = JSON.parse(localStorage.getItem('fitActivities') || '[]');
+let weekData = JSON.parse(localStorage.getItem('fitWeekData') || JSON.stringify([0,0,0,0,0,0,0]));
+
+const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const today = new Date();
+const todayIdx = today.getDay();
+
+document.getElementById('todayDate').textContent = today.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['log','history','weekly'][i] === name));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'weekly') renderWeekChart();
+}
+
+function logActivity() {
+  const type = document.getElementById('exType').value;
+  const dur = parseInt(document.getElementById('duration').value) || 0;
+  const cals = parseInt(document.getElementById('calories').value) || 0;
+  const stps = parseInt(document.getElementById('steps').value) || 0;
+  if (!dur && !cals) { alert('Enter at least duration or calories.'); return; }
+
+  activities.unshift({ type, dur, cals, stps, time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) });
+  weekData[todayIdx] += cals;
+  localStorage.setItem('fitActivities', JSON.stringify(activities));
+  localStorage.setItem('fitWeekData', JSON.stringify(weekData));
+
+  document.getElementById('duration').value = '';
+  document.getElementById('calories').value = '';
+  document.getElementById('steps').value = '';
+  updateStats();
+  renderHistory();
+  switchTab('history');
+}
+
+function deleteActivity(i) {
+  const a = activities[i];
+  weekData[todayIdx] = Math.max(0, weekData[todayIdx] - a.cals);
+  activities.splice(i, 1);
+  localStorage.setItem('fitActivities', JSON.stringify(activities));
+  localStorage.setItem('fitWeekData', JSON.stringify(weekData));
+  updateStats();
+  renderHistory();
+}
+
+function updateStats() {
+  const totCals = activities.reduce((s,a) => s + a.cals, 0);
+  const totMins = activities.reduce((s,a) => s + a.dur, 0);
+  const totSteps = activities.reduce((s,a) => s + a.stps, 0);
+  document.getElementById('totalSteps').textContent = totSteps.toLocaleString();
+  document.getElementById('totalCals').textContent = totCals;
+  document.getElementById('totalMins').textContent = totMins;
+  document.getElementById('totalWorkouts').textContent = activities.length;
+
+  const sp = Math.min(100, (totSteps/10000)*100);
+  const cp = Math.min(100, (totCals/500)*100);
+  const mp = Math.min(100, (totMins/60)*100);
+  document.getElementById('stepsBar').style.width = sp + '%';
+  document.getElementById('calsBar').style.width = cp + '%';
+  document.getElementById('minsBar').style.width = mp + '%';
+  document.getElementById('stepsGoalText').textContent = totSteps.toLocaleString() + ' / 10,000';
+  document.getElementById('calsGoalText').textContent = totCals + ' / 500';
+  document.getElementById('minsGoalText').textContent = totMins + ' / 60';
+}
+
+function renderHistory() {
+  const list = document.getElementById('activityList');
+  if (activities.length === 0) { list.innerHTML = '<div class="empty-log">No activities logged today. Start tracking!</div>'; return; }
+  list.innerHTML = activities.map((a, i) => `
+    <div class="activity-item">
+      <div class="act-icon">${a.type.split(' ')[0]}</div>
+      <div class="act-info">
+        <div class="act-name">${a.type.substring(a.type.indexOf(' ')+1)}</div>
+        <div class="act-meta">${a.dur ? a.dur + ' mins' : ''}${a.dur && a.stps ? ' · ' : ''}${a.stps ? a.stps.toLocaleString() + ' steps' : ''} · ${a.time}</div>
+      </div>
+      <div class="act-cals">${a.cals} kcal</div>
+      <button class="btn-del" onclick="deleteActivity(${i})">🗑️</button>
+    </div>`).join('');
+}
+
+function renderWeekChart() {
+  const maxVal = Math.max(...weekData, 1);
+  document.getElementById('weekChart').innerHTML = weekData.map((val, i) => `
+    <div class="bar-col">
+      <div class="bar-val">${val || ''}</div>
+      <div class="bar" style="height:${Math.max(4, (val/maxVal)*80)}px;${i===todayIdx?'background:linear-gradient(to top,#f97316,#fb923c)':''}"></div>
+      <div class="bar-label">${days[i]}</div>
+    </div>`).join('');
+}
+
+updateStats();
+renderHistory();
+</script>
+</body>
+</html>

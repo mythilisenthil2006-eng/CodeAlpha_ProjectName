@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language Learning App</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #07090f; color: #e2e8f0; min-height: 100vh; }
+  header { background: #0f1117; border-bottom: 1px solid #1e2333; padding: 15px 22px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 1.2rem; color: #818cf8; font-weight: 700; letter-spacing: 1px; }
+  .xp-badge { background: #818cf822; color: #a5b4fc; padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 24px 16px; }
+
+  /* Language Picker */
+  .lang-selector { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+  .lang-btn { padding: 10px 20px; border-radius: 50px; border: 1px solid #1e2333; background: #0f1117; color: #94a3b8; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+  .lang-btn.active { background: #818cf822; border-color: #818cf8; color: #a5b4fc; }
+  .lang-btn:hover { border-color: #818cf866; }
+
+  /* Section Tabs */
+  .section-tabs { display: flex; gap: 4px; background: #0f1117; border-radius: 12px; padding: 4px; margin-bottom: 20px; border: 1px solid #1e2333; }
+  .stab { flex: 1; padding: 10px; border: none; background: none; color: #475569; font-size: 0.82rem; font-weight: 600; cursor: pointer; border-radius: 9px; font-family: inherit; transition: all 0.2s; }
+  .stab.active { background: #1e2333; color: #818cf8; }
+
+  /* Lesson Card */
+  .lesson-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .lesson-card { background: #0f1117; border: 1px solid #1e2333; border-radius: 14px; padding: 18px 14px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+  .lesson-card:hover { border-color: #818cf866; transform: translateY(-2px); }
+  .lesson-card.active-lesson { border-color: #818cf8; background: #818cf810; }
+  .lesson-emoji { font-size: 2rem; margin-bottom: 8px; }
+  .lesson-name { font-size: 0.82rem; color: #94a3b8; font-weight: 600; }
+  .lesson-count { font-size: 0.7rem; color: #334155; margin-top: 3px; }
+  .lesson-badge { position: absolute; top: 8px; right: 8px; background: #22c55e; color: #0d1117; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+
+  /* Flashcard / Lesson View */
+  .vocab-section { display: none; }
+  .vocab-section.open { display: block; }
+  .vocab-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .vocab-header h2 { font-size: 1rem; color: #818cf8; }
+  .btn-back { background: none; border: 1px solid #1e2333; color: #94a3b8; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-family: inherit; }
+
+  .vocab-card { background: #0f1117; border: 1px solid #1e2333; border-radius: 18px; padding: 36px 28px; text-align: center; margin-bottom: 14px; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+  .vc-lang { font-size: 2.2rem; font-weight: 700; color: #e2e8f0; margin-bottom: 10px; }
+  .vc-pronunciation { font-size: 0.85rem; color: #475569; margin-bottom: 6px; font-style: italic; }
+  .vc-translation { font-size: 1.1rem; color: #818cf8; font-weight: 600; display: none; margin-top: 10px; }
+  .vc-translation.show { display: block; }
+  .vc-example { font-size: 0.82rem; color: #334155; margin-top: 8px; display: none; }
+  .vc-example.show { display: block; }
+  .tap-hint { font-size: 0.75rem; color: #1e2333; position: absolute; bottom: 12px; }
+
+  .vocab-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+  .btn-vc { padding: 10px 22px; border-radius: 10px; border: none; font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; }
+  .btn-prev { background: #1e2333; color: #94a3b8; }
+  .btn-prev:hover { background: #2d3748; }
+  .btn-reveal { background: linear-gradient(135deg, #4f46e5, #818cf8); color: #fff; }
+  .btn-reveal:hover { opacity: 0.9; }
+  .btn-next { background: #1e2333; color: #94a3b8; }
+  .btn-next:hover { background: #2d3748; }
+
+  /* Vocab List */
+  .vocab-list { display: flex; flex-direction: column; gap: 8px; }
+  .vocab-row { background: #0f1117; border: 1px solid #1e2333; border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 16px; }
+  .vr-word { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; min-width: 100px; }
+  .vr-pron { font-size: 0.78rem; color: #475569; flex: 1; font-style: italic; }
+  .vr-trans { font-size: 0.85rem; color: #818cf8; font-weight: 600; min-width: 100px; text-align: right; }
+
+  /* Quiz Section */
+  .quiz-section { display: none; }
+  .quiz-section.open { display: block; }
+  .quiz-card { background: #0f1117; border: 1px solid #1e2333; border-radius: 18px; padding: 32px 24px; text-align: center; margin-bottom: 16px; }
+  .quiz-q { font-size: 1.1rem; color: #e2e8f0; margin-bottom: 6px; font-weight: 600; }
+  .quiz-sub { font-size: 0.82rem; color: #475569; margin-bottom: 22px; }
+  .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .quiz-opt { padding: 14px; background: #161d2b; border: 1px solid #1e2333; border-radius: 10px; color: #94a3b8; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; font-family: inherit; }
+  .quiz-opt:hover { border-color: #818cf866; color: #e2e8f0; }
+  .quiz-opt.correct { background: #14532d22; border-color: #22c55e; color: #4ade80; }
+  .quiz-opt.wrong { background: #7f1d1d22; border-color: #ef4444; color: #f87171; }
+  .quiz-feedback { font-size: 0.9rem; margin-top: 14px; min-height: 22px; font-weight: 600; }
+  .quiz-score { display: flex; gap: 20px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .score-box { background: #0f1117; border: 1px solid #1e2333; border-radius: 10px; padding: 10px 20px; text-align: center; }
+  .score-val { font-size: 1.3rem; font-weight: 700; }
+  .score-label { font-size: 0.7rem; color: #475569; text-transform: uppercase; }
+
+  .progress-indicator { display: flex; justify-content: center; gap: 6px; margin-bottom: 16px; }
+  .pi-dot { width: 8px; height: 8px; border-radius: 50%; background: #1e2333; transition: background 0.3s; }
+  .pi-dot.done { background: #22c55e; }
+  .pi-dot.current { background: #818cf8; }
+
+  .section-content { display: none; }
+  .section-content.active { display: block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌐 LinguaLearn</h1>
+  <span class="xp-badge" id="xpBadge">⭐ 0 XP</span>
+</header>
+
+<div class="main">
+  <!-- Language Selector -->
+  <div class="lang-selector" id="langSelector">
+    <button class="lang-btn active" onclick="setLang('Spanish')">🇪🇸 Spanish</button>
+    <button class="lang-btn" onclick="setLang('French')">🇫🇷 French</button>
+    <button class="lang-btn" onclick="setLang('Japanese')">🇯🇵 Japanese</button>
+    <button class="lang-btn" onclick="setLang('German')">🇩🇪 German</button>
+    <button class="lang-btn" onclick="setLang('Hindi')">🇮🇳 Hindi</button>
+  </div>
+
+  <!-- Section Tabs -->
+  <div class="section-tabs">
+    <button class="stab active" onclick="switchSection('lessons')">📚 Lessons</button>
+    <button class="stab" onclick="switchSection('flashcards')">🃏 Flashcards</button>
+    <button class="stab" onclick="switchSection('quiz')">✏️ Quiz</button>
+  </div>
+
+  <!-- Lessons Section -->
+  <div class="section-content active" id="sec-lessons">
+    <div class="lesson-grid" id="lessonGrid"></div>
+    <div class="vocab-section" id="vocabSection">
+      <div class="vocab-header">
+        <h2 id="vocabTitle">Vocabulary</h2>
+        <button class="btn-back" onclick="closeVocab()">← Back</button>
+      </div>
+      <div class="vocab-list" id="vocabList"></div>
+    </div>
+  </div>
+
+  <!-- Flashcards Section -->
+  <div class="section-content" id="sec-flashcards">
+    <div class="vocab-card" id="vcCard" onclick="revealCard()">
+      <div class="vc-lang" id="vcWord">Select a lesson first</div>
+      <div class="vc-pronunciation" id="vcPron"></div>
+      <div class="vc-translation" id="vcTrans"></div>
+      <div class="vc-example" id="vcEx"></div>
+      <div class="tap-hint">Tap to reveal</div>
+    </div>
+    <div class="vocab-controls">
+      <button class="btn-vc btn-prev" onclick="cardNav(-1)">◀</button>
+      <button class="btn-vc btn-reveal" onclick="revealCard()">Reveal</button>
+      <button class="btn-vc btn-next" onclick="cardNav(1)">▶</button>
+    </div>
+    <div style="text-align:center; font-size:0.78rem; color:#334155;" id="cardCounter"></div>
+  </div>
+
+  <!-- Quiz Section -->
+  <div class="section-content" id="sec-quiz">
+    <div class="quiz-score">
+      <div class="score-box"><div class="score-val green" id="qCorrect">0</div><div class="score-label">Correct</div></div>
+      <div class="score-box"><div class="score-val" style="color:#f87171" id="qWrong">0</div><div class="score-label">Wrong</div></div>
+      <div class="score-box"><div class="score-val" style="color:#818cf8" id="qStreak">0</div><div class="score-label">Streak 🔥</div></div>
+    </div>
+    <div class="progress-indicator" id="progIndicator"></div>
+    <div class="quiz-card">
+      <div class="quiz-q" id="quizQ">Loading quiz...</div>
+      <div class="quiz-sub" id="quizSub">Choose the correct translation</div>
+      <div class="quiz-options" id="quizOptions"></div>
+      <div class="quiz-feedback" id="quizFeedback"></div>
+    </div>
+    <div style="text-align:center;"><button class="btn-vc btn-reveal" onclick="nextQuestion()" id="nextQBtn" style="display:none">Next Question →</button></div>
+  </div>
+</div>
+
+<script>
+const langData = {
+  Spanish: {
+    Greetings: { emoji:'👋', words:[
+      {word:'Hola', pron:'OH-lah', trans:'Hello', ex:'¡Hola! ¿Cómo estás?'},
+      {word:'Buenos días', pron:'BWEH-nos DEE-as', trans:'Good morning', ex:'Buenos días, señor García.'},
+      {word:'Buenas noches', pron:'BWEH-nas NO-ches', trans:'Good night', ex:'Buenas noches, hasta mañana.'},
+      {word:'Adiós', pron:'ah-DYOS', trans:'Goodbye', ex:'¡Adiós! Fue un placer.'},
+      {word:'Gracias', pron:'GRAH-syahs', trans:'Thank you', ex:'Muchas gracias por tu ayuda.'}
+    ]},
+    Numbers: { emoji:'🔢', words:[
+      {word:'Uno', pron:'OO-noh', trans:'One', ex:'Tengo uno.'},
+      {word:'Dos', pron:'dohs', trans:'Two', ex:'Son las dos.'},
+      {word:'Tres', pron:'trehs', trans:'Three', ex:'Tres personas.'},
+      {word:'Cuatro', pron:'KWAH-troh', trans:'Four', ex:'Cuatro días.'},
+      {word:'Cinco', pron:'SEEN-koh', trans:'Five', ex:'Cinco minutos.'}
+    ]},
+    Colors: { emoji:'🎨', words:[
+      {word:'Rojo', pron:'ROH-hoh', trans:'Red', ex:'El cielo es rojo.'},
+      {word:'Azul', pron:'ah-SOOL', trans:'Blue', ex:'El mar es azul.'},
+      {word:'Verde', pron:'VEHR-deh', trans:'Green', ex:'La hierba es verde.'},
+      {word:'Amarillo', pron:'ah-mah-REE-yoh', trans:'Yellow', ex:'El sol es amarillo.'},
+      {word:'Blanco', pron:'BLAHN-koh', trans:'White', ex:'La nieve es blanca.'}
+    ]},
+    Food: { emoji:'🍽️', words:[
+      {word:'Pan', pron:'pahn', trans:'Bread', ex:'Me gusta el pan.'},
+      {word:'Agua', pron:'AH-gwah', trans:'Water', ex:'Un vaso de agua.'},
+      {word:'Arroz', pron:'ah-ROHS', trans:'Rice', ex:'El arroz es delicioso.'},
+      {word:'Leche', pron:'LEH-cheh', trans:'Milk', ex:'Un litro de leche.'},
+      {word:'Pollo', pron:'POH-yoh', trans:'Chicken', ex:'El pollo está rico.'}
+    ]}
+  },
+  French: {
+    Greetings: { emoji:'👋', words:[
+      {word:'Bonjour', pron:'bon-ZHOOR', trans:'Hello/Good day', ex:'Bonjour, comment allez-vous?'},
+      {word:'Merci', pron:'mair-SEE', trans:'Thank you', ex:'Merci beaucoup!'},
+      {word:'Au revoir', pron:'oh ruh-VWAHR', trans:'Goodbye', ex:'Au revoir, à bientôt!'},
+      {word:'Oui', pron:'wee', trans:'Yes', ex:'Oui, je comprends.'},
+      {word:'Non', pron:'nohn', trans:'No', ex:'Non, merci.'}
+    ]},
+    Numbers: { emoji:'🔢', words:[
+      {word:'Un', pron:'uhn', trans:'One', ex:'Un chat.'},
+      {word:'Deux', pron:'duh', trans:'Two', ex:'Deux enfants.'},
+      {word:'Trois', pron:'twah', trans:'Three', ex:'Trois livres.'},
+      {word:'Quatre', pron:'KAH-truh', trans:'Four', ex:'Quatre heures.'},
+      {word:'Cinq', pron:'sank', trans:'Five', ex:'Cinq euros.'}
+    ]},
+    Colors: { emoji:'🎨', words:[
+      {word:'Rouge', pron:'roozh', trans:'Red', ex:'La rose est rouge.'},
+      {word:'Bleu', pron:'bluh', trans:'Blue', ex:'Le ciel est bleu.'},
+      {word:'Vert', pron:'vair', trans:'Green', ex:'L\'herbe est verte.'},
+      {word:'Jaune', pron:'zhohn', trans:'Yellow', ex:'Le soleil est jaune.'},
+      {word:'Blanc', pron:'blahn', trans:'White', ex:'La neige est blanche.'}
+    ]},
+    Food: { emoji:'🍽️', words:[
+      {word:'Pain', pron:'pan', trans:'Bread', ex:'J\'aime le pain.'},
+      {word:'Eau', pron:'oh', trans:'Water', ex:'Un verre d\'eau.'},
+      {word:'Fromage', pron:'froh-MAZH', trans:'Cheese', ex:'Le fromage est bon.'},
+      {word:'Vin', pron:'van', trans:'Wine', ex:'Un verre de vin.'},
+      {word:'Poulet', pron:'poo-LEH', trans:'Chicken', ex:'Le poulet rôti.'}
+    ]}
+  },
+  Japanese: {
+    Greetings: { emoji:'👋', words:[
+      {word:'こんにちは', pron:'Kon-ni-chi-wa', trans:'Hello', ex:'こんにちは、元気ですか？'},
+      {word:'ありがとう', pron:'A-ri-ga-to', trans:'Thank you', ex:'ありがとうございます。'},
+      {word:'さようなら', pron:'Sa-yo-u-na-ra', trans:'Goodbye', ex:'さようなら、またね！'},
+      {word:'はい', pron:'Hai', trans:'Yes', ex:'はい、わかりました。'},
+      {word:'いいえ', pron:'I-i-e', trans:'No', ex:'いいえ、違います。'}
+    ]},
+    Numbers: { emoji:'🔢', words:[
+      {word:'いち', pron:'Ichi', trans:'One', ex:'いちつ。'},
+      {word:'に', pron:'Ni', trans:'Two', ex:'ふたつ。'},
+      {word:'さん', pron:'San', trans:'Three', ex:'みっつ。'},
+      {word:'し', pron:'Shi/Yon', trans:'Four', ex:'よっつ。'},
+      {word:'ご', pron:'Go', trans:'Five', ex:'いつつ。'}
+    ]},
+    Colors: { emoji:'🎨', words:[
+      {word:'あか', pron:'Aka', trans:'Red', ex:'あかいバラ。'},
+      {word:'あお', pron:'Ao', trans:'Blue', ex:'あおいそら。'},
+      {word:'みどり', pron:'Midori', trans:'Green', ex:'みどりのき。'},
+      {word:'きいろ', pron:'Kiiro', trans:'Yellow', ex:'きいろいたいよう。'},
+      {word:'しろ', pron:'Shiro', trans:'White', ex:'しろいゆき。'}
+    ]},
+    Food: { emoji:'🍽️', words:[
+      {word:'すし', pron:'Sushi', trans:'Sushi', ex:'すしがすきです。'},
+      {word:'みず', pron:'Mizu', trans:'Water', ex:'みずをください。'},
+      {word:'ごはん', pron:'Gohan', trans:'Rice/Meal', ex:'ごはんをたべます。'},
+      {word:'ラーメン', pron:'Ra-men', trans:'Ramen', ex:'ラーメンはおいしい。'},
+      {word:'てんぷら', pron:'Tenpura', trans:'Tempura', ex:'てんぷらがすき。'}
+    ]}
+  },
+  German: {
+    Greetings: { emoji:'👋', words:[
+      {word:'Hallo', pron:'HAH-loh', trans:'Hello', ex:'Hallo, wie geht es dir?'},
+      {word:'Danke', pron:'DAHN-keh', trans:'Thank you', ex:'Danke schön!'},
+      {word:'Auf Wiedersehen', pron:'owf-VEE-der-zayn', trans:'Goodbye', ex:'Auf Wiedersehen, bis morgen!'},
+      {word:'Ja', pron:'yah', trans:'Yes', ex:'Ja, natürlich.'},
+      {word:'Nein', pron:'nine', trans:'No', ex:'Nein, danke.'}
+    ]},
+    Numbers: { emoji:'🔢', words:[
+      {word:'Eins', pron:'eyns', trans:'One', ex:'Eins, zwei, drei!'},
+      {word:'Zwei', pron:'tsvey', trans:'Two', ex:'Zwei Kinder.'},
+      {word:'Drei', pron:'drey', trans:'Three', ex:'Drei Bücher.'},
+      {word:'Vier', pron:'feer', trans:'Four', ex:'Vier Stunden.'},
+      {word:'Fünf', pron:'fuenf', trans:'Five', ex:'Fünf Minuten.'}
+    ]},
+    Colors: { emoji:'🎨', words:[
+      {word:'Rot', pron:'roht', trans:'Red', ex:'Die Rose ist rot.'},
+      {word:'Blau', pron:'blow', trans:'Blue', ex:'Der Himmel ist blau.'},
+      {word:'Grün', pron:'gruen', trans:'Green', ex:'Das Gras ist grün.'},
+      {word:'Gelb', pron:'gelp', trans:'Yellow', ex:'Die Sonne ist gelb.'},
+      {word:'Weiß', pron:'vice', trans:'White', ex:'Schnee ist weiß.'}
+    ]},
+    Food: { emoji:'🍽️', words:[
+      {word:'Brot', pron:'broht', trans:'Bread', ex:'Ich mag Brot.'},
+      {word:'Wasser', pron:'VAH-ser', trans:'Water', ex:'Ein Glas Wasser.'},
+      {word:'Käse', pron:'KAY-ze', trans:'Cheese', ex:'Der Käse ist lecker.'},
+      {word:'Fleisch', pron:'flysh', trans:'Meat', ex:'Ich esse Fleisch.'},
+      {word:'Wurst', pron:'voorst', trans:'Sausage', ex:'Die Wurst ist gut.'}
+    ]}
+  },
+  Hindi: {
+    Greetings: { emoji:'👋', words:[
+      {word:'नमस्ते', pron:'Na-mas-te', trans:'Hello/Greetings', ex:'नमस्ते, कैसे हो?'},
+      {word:'धन्यवाद', pron:'Dhan-ya-vaad', trans:'Thank you', ex:'बहुत धन्यवाद!'},
+      {word:'अलविदा', pron:'Al-vi-da', trans:'Goodbye', ex:'अलविदा, फिर मिलेंगे।'},
+      {word:'हाँ', pron:'Haan', trans:'Yes', ex:'हाँ, बिल्कुल।'},
+      {word:'नहीं', pron:'Na-heen', trans:'No', ex:'नहीं, धन्यवाद।'}
+    ]},
+    Numbers: { emoji:'🔢', words:[
+      {word:'एक', pron:'Ek', trans:'One', ex:'एक किताब।'},
+      {word:'दो', pron:'Do', trans:'Two', ex:'दो बच्चे।'},
+      {word:'तीन', pron:'Teen', trans:'Three', ex:'तीन दिन।'},
+      {word:'चार', pron:'Chaar', trans:'Four', ex:'चार घंटे।'},
+      {word:'पाँच', pron:'Paanch', trans:'Five', ex:'पाँच मिनट।'}
+    ]},
+    Colors: { emoji:'🎨', words:[
+      {word:'लाल', pron:'Laal', trans:'Red', ex:'लाल गुलाब।'},
+      {word:'नीला', pron:'Neela', trans:'Blue', ex:'नीला आकाश।'},
+      {word:'हरा', pron:'Hara', trans:'Green', ex:'हरी घास।'},
+      {word:'पीला', pron:'Peela', trans:'Yellow', ex:'पीला सूरज।'},
+      {word:'सफेद', pron:'Sa-fed', trans:'White', ex:'सफेद बर्फ।'}
+    ]},
+    Food: { emoji:'🍽️', words:[
+      {word:'रोटी', pron:'Ro-tee', trans:'Bread/Roti', ex:'रोटी खाओ।'},
+      {word:'पानी', pron:'Pa-nee', trans:'Water', ex:'पानी पियो।'},
+      {word:'चावल', pron:'Chaa-val', trans:'Rice', ex:'चावल अच्छे हैं।'},
+      {word:'दाल', pron:'Daal', trans:'Lentils', ex:'दाल बहुत स्वादिष्ट है।'},
+      {word:'सब्जी', pron:'Sab-zee', trans:'Vegetables', ex:'सब्जी खाना सेहतमंद है।'}
+    ]}
+  }
+};
+
+let currentLang = 'Spanish';
+let currentLesson = null;
+let cardIdx = 0;
+let cardRevealed = false;
+let xp = 0;
+let quizData = { correct: 0, wrong: 0, streak: 0, qIdx: 0, allWords: [] };
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.includes(lang)));
+  closeVocab();
+  renderLessons();
+  buildQuiz();
+  renderFlashcard();
+}
+
+function renderLessons() {
+  const lessons = langData[currentLang];
+  const grid = document.getElementById('lessonGrid');
+  grid.innerHTML = Object.entries(lessons).map(([name, data]) => `
+    <div class="lesson-card ${currentLesson === name ? 'active-lesson' : ''}" onclick="openLesson('${name}')">
+      <div class="lesson-emoji">${data.emoji}</div>
+      <div class="lesson-name">${name}</div>
+      <div class="lesson-count">${data.words.length} words</div>
+    </div>`).join('');
+}
+
+function openLesson(name) {
+  currentLesson = name;
+  renderLessons();
+  const words = langData[currentLang][name].words;
+  document.getElementById('vocabTitle').textContent = `${langData[currentLang][name].emoji} ${name}`;
+  document.getElementById('vocabList').innerHTML = words.map(w => `
+    <div class="vocab-row">
+      <div class="vr-word">${w.word}</div>
+      <div class="vr-pron">${w.pron}</div>
+      <div class="vr-trans">${w.trans}</div>
+    </div>`).join('');
+  document.getElementById('vocabSection').classList.add('open');
+  document.getElementById('lessonGrid').style.display = 'none';
+}
+
+function closeVocab() {
+  document.getElementById('vocabSection').classList.remove('open');
+  document.getElementById('lessonGrid').style.display = 'grid';
+  currentLesson = null;
+  renderLessons();
+}
+
+// Flashcards
+function getAllWords() {
+  return Object.values(langData[currentLang]).flatMap(l => l.words);
+}
+
+function renderFlashcard() {
+  const words = getAllWords();
+  if (!words.length) return;
+  cardIdx = cardIdx % words.length;
+  const w = words[cardIdx];
+  document.getElementById('vcWord').textContent = w.word;
+  document.getElementById('vcPron').textContent = w.pron;
+  document.getElementById('vcTrans').textContent = w.trans;
+  document.getElementById('vcTrans').className = 'vc-translation';
+  document.getElementById('vcEx').textContent = w.ex;
+  document.getElementById('vcEx').className = 'vc-example';
+  document.getElementById('cardCounter').textContent = `${cardIdx + 1} / ${words.length}`;
+  cardRevealed = false;
+}
+
+function revealCard() {
+  if (!cardRevealed) {
+    document.getElementById('vcTrans').classList.add('show');
+    document.getElementById('vcEx').classList.add('show');
+    cardRevealed = true;
+    addXP(5);
+  }
+}
+
+function cardNav(dir) {
+  const words = getAllWords();
+  cardIdx = (cardIdx + dir + words.length) % words.length;
+  renderFlashcard();
+}
+
+// Quiz
+function buildQuiz() {
+  quizData.allWords = getAllWords();
+  quizData.qIdx = 0;
+  quizData.correct = 0;
+  quizData.wrong = 0;
+  quizData.streak = 0;
+  renderQuizQuestion();
+  updateQuizScore();
+}
+
+function renderQuizQuestion() {
+  const words = quizData.allWords;
+  if (!words.length) return;
+  const qi = Math.floor(Math.random() * words.length);
+  const correct = words[qi];
+  const opts = [correct];
+  while (opts.length < 4) {
+    const r = words[Math.floor(Math.random() * words.length)];
+    if (!opts.find(o => o.trans === r.trans)) opts.push(r);
+  }
+  opts.sort(() => Math.random() - 0.5);
+
+  document.getElementById('quizQ').textContent = correct.word;
+  document.getElementById('quizSub').textContent = `(${correct.pron}) — Choose the correct translation`;
+  document.getElementById('quizFeedback').textContent = '';
+  document.getElementById('nextQBtn').style.display = 'none';
+
+  const optEl = document.getElementById('quizOptions');
+  optEl.innerHTML = opts.map(o => `<button class="quiz-opt" onclick="checkAnswer(this,'${o.trans}','${correct.trans}')">${o.trans}</button>`).join('');
+
+  // Progress dots
+  const prog = document.getElementById('progIndicator');
+  prog.innerHTML = Array(10).fill(0).map((_, i) => `<div class="pi-dot ${i < quizData.qIdx ? 'done' : i === quizData.qIdx ? 'current' : ''}"></div>`).join('');
+}
+
+function checkAnswer(btn, chosen, correct) {
+  document.querySelectorAll('.quiz-opt').forEach(b => b.style.pointerEvents = 'none');
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    document.getElementById('quizFeedback').innerHTML = '<span style="color:#4ade80">✓ Correct!</span>';
+    quizData.correct++;
+    quizData.streak++;
+    addXP(10);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.quiz-opt').forEach(b => { if (b.textContent === correct) b.classList.add('correct'); });
+    document.getElementById('quizFeedback').innerHTML = `<span style="color:#f87171">✗ Correct answer: ${correct}</span>`;
+    quizData.wrong++;
+    quizData.streak = 0;
+  }
+  quizData.qIdx = Math.min(quizData.qIdx + 1, 10);
+  updateQuizScore();
+  document.getElementById('nextQBtn').style.display = 'inline-block';
+}
+
+function nextQuestion() { renderQuizQuestion(); }
+
+function updateQuizScore() {
+  document.getElementById('qCorrect').textContent = quizData.correct;
+  document.getElementById('qWrong').textContent = quizData.wrong;
+  document.getElementById('qStreak').textContent = quizData.streak;
+}
+
+function addXP(pts) {
+  xp += pts;
+  document.getElementById('xpBadge').textContent = `⭐ ${xp} XP`;
+}
+
+function switchSection(name) {
+  document.querySelectorAll('.stab').forEach((t, i) => t.classList.toggle('active', ['lessons','flashcards','quiz'][i] === name));
+  document.querySelectorAll('.section-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  if (name === 'flashcards') renderFlashcard();
+  if (name === 'quiz') buildQuiz();
+}
+
+// Init
+renderLessons();
+buildQuiz();
+</script>
+</body>
+</html>
